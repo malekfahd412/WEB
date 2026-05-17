@@ -1,0 +1,882 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Heroes Empire gaming progression API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: players
+    description: Player profiles and roster
+  - name: me
+    description: Current player operations
+  - name: activity
+    description: Activity logging
+  - name: shop
+    description: Shop and cosmetics
+  - name: leaderboard
+    description: Server leaderboards
+  - name: season
+    description: Seasonal progression
+  - name: auth
+    description: Authentication and session
+  - name: admin
+    description: Bot/admin endpoints (requires X-Bot-Token header)
+paths:
+  /auth/me:
+    get:
+      operationId: getAuthSession
+      tags: [auth]
+      summary: Get the currently authenticated session
+      responses:
+        "200":
+          description: Session info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: End the current session
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                required: [ok]
+
+  /admin/add-xp:
+    post:
+      operationId: adminAddXp
+      tags: [admin]
+      summary: Grant XP to a player by Discord ID (bot)
+      parameters:
+        - in: header
+          name: X-Bot-Token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAddXpBody"
+      responses:
+        "200":
+          description: Updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /admin/add-coins:
+    post:
+      operationId: adminAddCoins
+      tags: [admin]
+      summary: Grant coins to a player by Discord ID (bot)
+      parameters:
+        - in: header
+          name: X-Bot-Token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAddCoinsBody"
+      responses:
+        "200":
+          description: Updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /admin/set-rockstar-id:
+    post:
+      operationId: adminSetRockstarId
+      tags: [admin]
+      summary: Set a player's Rockstar ID by Discord ID (bot)
+      parameters:
+        - in: header
+          name: X-Bot-Token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminSetRockstarIdBody"
+      responses:
+        "200":
+          description: Updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /me:
+    get:
+      operationId: getMe
+      tags: [me]
+      summary: Get the current player profile
+      responses:
+        "200":
+          description: Current player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /me/dashboard:
+    get:
+      operationId: getDashboard
+      tags: [me]
+      summary: Dashboard summary for the current player
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+
+  /me/rockstar-id:
+    patch:
+      operationId: setRockstarId
+      tags: [me]
+      summary: Link or update the player's Rockstar Social Club ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetRockstarIdBody"
+      responses:
+        "200":
+          description: Updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /me/activity:
+    post:
+      operationId: logActivity
+      tags: [activity]
+      summary: Log a gameplay activity for the current player
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogActivityBody"
+      responses:
+        "200":
+          description: Activity result with rewards
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityResult"
+
+  /me/inventory:
+    get:
+      operationId: getInventory
+      tags: [me]
+      summary: Get the current player's owned items
+      responses:
+        "200":
+          description: Inventory entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryEntry"
+
+  /me/equip:
+    post:
+      operationId: equipItem
+      tags: [me]
+      summary: Equip a cosmetic item from inventory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EquipItemBody"
+      responses:
+        "200":
+          description: Updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /me/daily-reward:
+    post:
+      operationId: claimDailyReward
+      tags: [me]
+      summary: Claim the daily login reward
+      responses:
+        "200":
+          description: Daily reward result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyRewardResult"
+
+  /me/activities:
+    get:
+      operationId: listMyActivities
+      tags: [me]
+      summary: Recent activities for the current player
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Activity entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityEntry"
+
+  /activities/feed:
+    get:
+      operationId: listActivityFeed
+      tags: [activity]
+      summary: Server-wide recent activity feed
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        "200":
+          description: Server activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityFeedEntry"
+
+  /players:
+    get:
+      operationId: listPlayers
+      tags: [players]
+      summary: List all players in the server roster
+      responses:
+        "200":
+          description: Player list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Player"
+
+  /players/{id}:
+    get:
+      operationId: getPlayer
+      tags: [players]
+      summary: Get a specific player profile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+        "404":
+          description: Not found
+
+  /shop:
+    get:
+      operationId: listShopItems
+      tags: [shop]
+      summary: List all shop items
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+            enum: [frame, badge, boost]
+      responses:
+        "200":
+          description: Shop items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShopItem"
+
+  /shop/purchase:
+    post:
+      operationId: purchaseItem
+      tags: [shop]
+      summary: Purchase a shop item with coins
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseBody"
+      responses:
+        "200":
+          description: Purchase result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseResult"
+        "400":
+          description: Insufficient funds or already owned
+
+  /leaderboard/{type}:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Get a leaderboard by category
+      parameters:
+        - in: path
+          name: type
+          required: true
+          schema:
+            type: string
+            enum: [xp, gta_missions, gta_heists, rl_matches, rl_wins]
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        "200":
+          description: Leaderboard rows
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Leaderboard"
+
+  /season/current:
+    get:
+      operationId: getCurrentSeason
+      tags: [season]
+      summary: Get the current season with progress for the player
+      responses:
+        "200":
+          description: Current season
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeasonProgress"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Attributes:
+      type: object
+      properties:
+        unity:
+          type: integer
+        focus:
+          type: integer
+        strength:
+          type: integer
+        honor:
+          type: integer
+        passion:
+          type: integer
+        victory:
+          type: integer
+      required: [unity, focus, strength, honor, passion, victory]
+
+    GameStats:
+      type: object
+      properties:
+        gtaMissions:
+          type: integer
+        gtaHeists:
+          type: integer
+        rlMatches:
+          type: integer
+        rlWins:
+          type: integer
+      required: [gtaMissions, gtaHeists, rlMatches, rlWins]
+
+    EquippedCosmetics:
+      type: object
+      properties:
+        frameId:
+          type: ["integer", "null"]
+        badgeId:
+          type: ["integer", "null"]
+      required: [frameId, badgeId]
+
+    Player:
+      type: object
+      properties:
+        id:
+          type: integer
+        discordId:
+          type: ["string", "null"]
+        discordUsername:
+          type: ["string", "null"]
+        discordAvatar:
+          type: ["string", "null"]
+        discordDiscriminator:
+          type: ["string", "null"]
+        username:
+          type: string
+        handle:
+          type: string
+        avatarUrl:
+          type: string
+        rockstarId:
+          type: ["string", "null"]
+        totalXp:
+          type: integer
+        level:
+          type: integer
+        coins:
+          type: integer
+        rankTier:
+          type: string
+          enum: [ROOKIE, BRONZE, SILVER, GOLD, PLATINUM, DIAMOND, MYTHIC]
+        currentLevelXp:
+          type: integer
+          description: XP earned within the current level
+        nextLevelXp:
+          type: integer
+          description: XP required to reach the next level (from current level start)
+        levelProgressPct:
+          type: number
+        serverRank:
+          type: integer
+        gameStats:
+          $ref: "#/components/schemas/GameStats"
+        attributes:
+          $ref: "#/components/schemas/Attributes"
+        equipped:
+          $ref: "#/components/schemas/EquippedCosmetics"
+        streakDays:
+          type: integer
+        lastActiveAt:
+          type: string
+          format: date-time
+        joinedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - discordId
+        - discordUsername
+        - discordAvatar
+        - discordDiscriminator
+        - username
+        - handle
+        - avatarUrl
+        - rockstarId
+        - totalXp
+        - level
+        - coins
+        - rankTier
+        - currentLevelXp
+        - nextLevelXp
+        - levelProgressPct
+        - serverRank
+        - gameStats
+        - attributes
+        - equipped
+        - streakDays
+        - lastActiveAt
+        - joinedAt
+
+    ActivityType:
+      type: string
+      enum: [gta_mission, gta_heist, rl_match, rl_win, daily_reward, level_up]
+
+    LogActivityBody:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [gta_mission, gta_heist, rl_match, rl_win]
+      required: [type]
+
+    ActivityResult:
+      type: object
+      properties:
+        player:
+          $ref: "#/components/schemas/Player"
+        xpGained:
+          type: integer
+        coinsGained:
+          type: integer
+        leveledUp:
+          type: boolean
+        levelsGained:
+          type: integer
+        bonusCoins:
+          type: integer
+        activity:
+          $ref: "#/components/schemas/ActivityEntry"
+      required: [player, xpGained, coinsGained, leveledUp, levelsGained, bonusCoins, activity]
+
+    ActivityEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          $ref: "#/components/schemas/ActivityType"
+        xpGained:
+          type: integer
+        coinsGained:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, type, xpGained, coinsGained, createdAt]
+
+    ActivityFeedEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        playerId:
+          type: integer
+        playerUsername:
+          type: string
+        playerAvatarUrl:
+          type: string
+        type:
+          $ref: "#/components/schemas/ActivityType"
+        xpGained:
+          type: integer
+        coinsGained:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - playerId
+        - playerUsername
+        - playerAvatarUrl
+        - type
+        - xpGained
+        - coinsGained
+        - createdAt
+
+    ShopItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [frame, badge, boost]
+        rarity:
+          type: string
+          enum: [common, rare, epic, mythic]
+        price:
+          type: integer
+        previewColor:
+          type: string
+          description: A neon hex color used to preview frames or badges
+        iconKey:
+          type: string
+          description: Symbolic key for icon glyph
+      required: [id, name, description, category, rarity, price, previewColor, iconKey]
+
+    InventoryEntry:
+      type: object
+      properties:
+        item:
+          $ref: "#/components/schemas/ShopItem"
+        acquiredAt:
+          type: string
+          format: date-time
+        equipped:
+          type: boolean
+      required: [item, acquiredAt, equipped]
+
+    PurchaseBody:
+      type: object
+      properties:
+        itemId:
+          type: integer
+      required: [itemId]
+
+    PurchaseResult:
+      type: object
+      properties:
+        player:
+          $ref: "#/components/schemas/Player"
+        item:
+          $ref: "#/components/schemas/ShopItem"
+      required: [player, item]
+
+    EquipItemBody:
+      type: object
+      properties:
+        itemId:
+          type: integer
+      required: [itemId]
+
+    SetRockstarIdBody:
+      type: object
+      properties:
+        rockstarId:
+          type: string
+      required: [rockstarId]
+
+    AuthSession:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+        loginUrl:
+          type: string
+          description: URL to start the Discord OAuth login flow
+        player:
+          $ref: "#/components/schemas/Player"
+      required: [authenticated, loginUrl]
+
+    AdminAddXpBody:
+      type: object
+      properties:
+        discordId:
+          type: string
+        amount:
+          type: integer
+      required: [discordId, amount]
+
+    AdminAddCoinsBody:
+      type: object
+      properties:
+        discordId:
+          type: string
+        amount:
+          type: integer
+      required: [discordId, amount]
+
+    AdminSetRockstarIdBody:
+      type: object
+      properties:
+        discordId:
+          type: string
+        rockstarId:
+          type: string
+      required: [discordId, rockstarId]
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        playerId:
+          type: integer
+        username:
+          type: string
+        avatarUrl:
+          type: string
+        level:
+          type: integer
+        rankTier:
+          type: string
+          enum: [ROOKIE, BRONZE, SILVER, GOLD, PLATINUM, DIAMOND, MYTHIC]
+        value:
+          type: integer
+          description: The leaderboard's metric value (xp, missions, etc.)
+        isMe:
+          type: boolean
+      required: [rank, playerId, username, avatarUrl, level, rankTier, value, isMe]
+
+    Leaderboard:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [xp, gta_missions, gta_heists, rl_matches, rl_wins]
+        label:
+          type: string
+        valueLabel:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
+      required: [type, label, valueLabel, entries]
+
+    DailyRewardResult:
+      type: object
+      properties:
+        claimed:
+          type: boolean
+          description: True if a reward was granted on this call. False if already claimed today.
+        coinsGained:
+          type: integer
+        xpGained:
+          type: integer
+        streakDays:
+          type: integer
+        nextClaimAt:
+          type: string
+          format: date-time
+        player:
+          $ref: "#/components/schemas/Player"
+      required: [claimed, coinsGained, xpGained, streakDays, nextClaimAt, player]
+
+    SeasonProgress:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        tagline:
+          type: string
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        daysRemaining:
+          type: integer
+        seasonXp:
+          type: integer
+        seasonTier:
+          type: integer
+        nextTierXp:
+          type: integer
+        progressPct:
+          type: number
+        rewards:
+          type: array
+          items:
+            $ref: "#/components/schemas/SeasonReward"
+      required:
+        - id
+        - name
+        - tagline
+        - startsAt
+        - endsAt
+        - daysRemaining
+        - seasonXp
+        - seasonTier
+        - nextTierXp
+        - progressPct
+        - rewards
+
+    SeasonReward:
+      type: object
+      properties:
+        tier:
+          type: integer
+        name:
+          type: string
+        kind:
+          type: string
+          enum: [coins, frame, badge, boost, xp]
+        amount:
+          type: integer
+        unlocked:
+          type: boolean
+      required: [tier, name, kind, amount, unlocked]
+
+    Dashboard:
+      type: object
+      properties:
+        player:
+          $ref: "#/components/schemas/Player"
+        recentActivities:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityEntry"
+        topPlayers:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
+        totals:
+          $ref: "#/components/schemas/ServerTotals"
+        season:
+          $ref: "#/components/schemas/SeasonProgress"
+      required: [player, recentActivities, topPlayers, totals, season]
+
+    ServerTotals:
+      type: object
+      properties:
+        totalPlayers:
+          type: integer
+        totalXpEarned:
+          type: integer
+        totalActivitiesLogged:
+          type: integer
+        topRankTier:
+          type: string
+          enum: [ROOKIE, BRONZE, SILVER, GOLD, PLATINUM, DIAMOND, MYTHIC]
+      required: [totalPlayers, totalXpEarned, totalActivitiesLogged, topRankTier]

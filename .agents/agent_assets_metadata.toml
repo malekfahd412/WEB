@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "kxFMmqO8LLcjNISzxVnom"
+uri = "file://artifacts/heroes-empire/public/bg-hero.png"
+type = "image"
+title = "hero section neon cityscape"
+
+[[generated]]
+id = "oV1GCQkimx-h_R7k_Yvs9"
+uri = "file://artifacts/heroes-empire/public/bg-season.png"
+type = "image"
+title = "season banner cyberpunk vista"
+
+[[generated]]
+id = "RUNQSl1MG2kGP7V0HYO4B"
+uri = "file://artifacts/heroes-empire/src/assets/bg-season-banner.png"
+type = "image"
+title = "Cyberpunk season banner"

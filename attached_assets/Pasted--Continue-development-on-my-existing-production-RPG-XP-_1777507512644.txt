@@ -1,0 +1,221 @@
+
+Continue development on my existing production RPG/XP system (API + Discord bot + Vite dashboard) on Replit.
+
+GOAL:
+Finalize the system into a secure XP + Missions + Economy platform with:
+- Fully working shop purchases
+- Inventory usage (especially boosts affecting XP)
+- Strict RBAC (owner/admin/user)
+- Admin-only mission logging (anti-cheat)
+- Full admin panel
+- Audit logging
+- Stable production behavior (no crashes, no broken routes)
+
+────────────────────────────
+🔐 1) RBAC (CRITICAL)
+────────────────────────────
+Roles:
+- user (default)
+- admin (limited control)
+- owner (full control)
+
+Rules:
+- Only admin/owner can access /api/panel/*
+- Only admin/owner can create logs/missions
+- Only owner can:
+  - promote/demote admins
+  - ban/unban admins
+  - reset players
+  - grant owner
+
+Implement:
+- requireRole("admin")
+- requireRole("owner")
+- Safe guards inside handlers for owner-only actions
+
+Auto-bootstrap:
+- If discordId === OWNER_DISCORD_ID → role = "owner"
+
+────────────────────────────
+🚫 2) ANTI-CHEAT (MANDATORY)
+────────────────────────────
+- Disable player ability to create logs
+- POST /api/me/activity → ADMIN/OWNER ONLY
+- All XP gain must come from:
+  - Discord bot
+  - Admin panel
+
+Reject any player-submitted XP/log attempts with 403
+
+────────────────────────────
+🛒 3) SHOP (MAKE IT 100% WORKING)
+────────────────────────────
+Use existing shop_items table.
+
+Implement:
+- GET /api/shop/items (public)
+- POST /api/shop/buy (auth required)
+
+Buy flow:
+- Get authenticated player from session (DO NOT accept playerId from body)
+- Validate item exists
+- Check player has enough coins
+- Deduct coins (atomic transaction)
+- Insert into inventory table
+- Prevent duplicate purchase for unique items (frames/badges if needed)
+
+Return updated:
+- coins
+- inventory
+
+Handle all edge cases:
+- insufficient coins
+- invalid item
+- duplicate purchases
+
+────────────────────────────
+🎒 4) INVENTORY SYSTEM
+────────────────────────────
+- Ensure every purchase appears in inventory
+- GET /api/me/inventory
+
+Add:
+- ability to “use” item:
+  POST /api/inventory/use
+
+Behavior:
+- frames/badges → cosmetic (mark equipped)
+- boosts → activate effect (see next section)
+
+────────────────────────────
+⚡ 5) BOOST SYSTEM (REAL EFFECT ON XP)
+────────────────────────────
+Extend shop_items with metadata or logic:
+- xp_multiplier (e.g. 2x)
+- duration_minutes
+
+When player uses a boost:
+- store active boost in DB (player_boosts table or field)
+- include:
+  - multiplier
+  - expires_at
+
+XP calculation:
+- When XP is granted (bot/admin):
+  apply multiplier if boost active
+
+Example:
+base_xp * multiplier
+
+Auto-expire:
+- ignore boost if expires_at < now()
+
+────────────────────────────
+⚖️ 6) BALANCING SYSTEM
+────────────────────────────
+Implement safe defaults:
+
+- Base XP per mission: configurable
+- Boost limits:
+  - no stacking OR stack cap (choose one)
+- Cooldown between boosts (optional)
+- Price vs power scaling:
+  - rare > common > epic > legendary
+
+Add config file or constants for easy tuning
+
+────────────────────────────
+🧾 7) AUDIT LOGGING (REQUIRED)
+────────────────────────────
+Create audit_logs table if not exists:
+- id
+- admin_id
+- action_type
+- target_player_id
+- metadata (JSON)
+- created_at
+
+Log EVERY admin action:
+- give XP
+- give coins
+- give item
+- ban/unban
+- role change
+- shop create/update/delete
+- manual log creation
+
+Expose:
+- GET /api/panel/audit (admin only)
+
+────────────────────────────
+🖥️ 8) ADMIN PANEL (FRONTEND)
+────────────────────────────
+Add pages:
+
+/admin
+- overview stats
+
+/admin/players
+- list + search
+
+/admin/players/:id
+- edit XP
+- edit coins
+- give item
+- ban/unban
+- change role (owner only for critical ops)
+
+/admin/shop
+- create item
+- edit item
+- delete item
+
+/admin/audit
+- audit log timeline
+
+UI Rules:
+- Hide admin panel from non-admins
+- Show STAFF badge
+- Remove quick log UI for normal users
+
+────────────────────────────
+🤖 9) DISCORD BOT INTEGRATION
+────────────────────────────
+- Bot remains the primary source of XP logs
+- Ensure bot calls API for:
+  - logging missions
+  - applying XP
+- Bot must respect boost multiplier automatically via API
+
+────────────────────────────
+🛡️ 10) STABILITY & SAFETY
+────────────────────────────
+- Wrap all routes with try/catch
+- Never crash on validation errors
+- Return JSON errors (no HTML)
+- Validate inputs using Zod
+- Use transactions for money/xp updates
+- Prevent negative coins or xp
+
+────────────────────────────
+⚠️ RULES
+────────────────────────────
+- DO NOT break existing API routes
+- DO NOT change DB destructively
+- DO NOT break Discord OAuth
+- DO NOT change port setup (Replit artifacts)
+- Keep backward compatibility
+
+────────────────────────────
+🎯 FINAL RESULT
+────────────────────────────
+A complete XP + Missions + Economy system:
+
+Discord Bot/Admin → Logs missions → XP granted → Boost affects XP →
+Coins earned → Player buys items → Inventory updates →
+Admin controls system → No cheating possible → Fully audited
+
+If any errors appear during implementation:
+- Fix them automatically
+- Ensure app compiles and runs
+- Ensure /api/healthz returns 200

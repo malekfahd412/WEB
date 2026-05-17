@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Heroes Empire"
+version = "1.0.0"
+id = "artifacts/heroes-empire"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23455
+
+[services.development]
+run = "pnpm --filter @workspace/heroes-empire run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/heroes-empire", "run", "build" ]
+publicDir = "artifacts/heroes-empire/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23455"
+BASE_PATH = "/"

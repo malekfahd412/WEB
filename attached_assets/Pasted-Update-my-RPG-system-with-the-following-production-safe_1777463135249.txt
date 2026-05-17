@@ -1,0 +1,96 @@
+Update my RPG system with the following production-safe features without breaking existing functionality.
+
+CURRENT SYSTEM:
+- API server (Node/Express + PostgreSQL)
+- Discord bot (XP + logs system)
+- React/Vite dashboard
+- Player inventory + XP system already exists
+
+FEATURES TO ADD:
+
+────────────────────────────
+1. SHOP SYSTEM (NEW)
+────────────────────────────
+
+Create a fully functional shop system:
+
+Database:
+- shop_items table:
+  - id
+  - name
+  - description
+  - price
+  - category (ENUM: frames, badges, boosts)
+  - metadata (JSON)
+  - created_at
+
+Categories:
+- Frames
+- Badges
+- Boosts
+
+API:
+- GET /api/shop/items (public)
+- POST /api/admin/shop/items (admin only)
+- DELETE /api/admin/shop/items/:id (admin only)
+- POST /api/shop/buy (player purchase)
+
+Logic:
+- When player buys item:
+  - deduct coins
+  - add item to inventory table
+  - prevent duplicate purchase if needed
+
+Inventory:
+- Ensure items appear in player inventory
+- Inventory must support all shop categories
+
+────────────────────────────
+2. REMOVE PLAYER QUICK LOG ACCESS
+────────────────────────────
+
+- Remove ability for normal users to submit logs manually
+- /api/log or quick log endpoint must be restricted to:
+  - ADMIN ONLY
+- Players should NOT be able to create or fake missions/logs
+
+────────────────────────────
+3. ADMIN PANEL EXPANSION
+────────────────────────────
+
+Add admin-only system:
+
+Endpoints:
+- GET /api/admin/overview
+- POST /api/admin/update-player
+- POST /api/admin/give-item
+- POST /api/admin/update-xp
+- POST /api/admin/update-coins
+
+All admin routes must require role === "admin" or "owner"
+
+────────────────────────────
+4. SECURITY REQUIREMENTS
+────────────────────────────
+
+- DO NOT break existing XP system
+- DO NOT modify Discord bot logic unless required
+- Keep backward compatibility with current database
+- Add migrations safely (no destructive schema changes)
+- Validate all inputs using Zod
+
+────────────────────────────
+5. FRONTEND (Dashboard)
+────────────────────────────
+
+- Add Admin Panel page
+- Add Shop UI:
+  - categories tabs (Frames / Badges / Boosts)
+  - buy button
+- Inventory page must display purchased items
+- Remove quick log UI from normal users
+
+────────────────────────────
+GOAL:
+Turn the system into a full RPG economy:
+Shop → Buy → Inventory → Admin-controlled economy
